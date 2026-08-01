@@ -19,6 +19,7 @@
             --color-cb:   #334155;
             
             --tiempo-total: 100s;
+            --manual-scroll: 0px; /* Controlado por JS */
         }
 
         body {
@@ -30,7 +31,6 @@
             height: 100vh; overflow: hidden;
         }
 
-        /* LIENZO AMPLIADO: Se sumaron 200px de alto (1280 en vez de 1080) para los márgenes */
         .viewport {
             width: 1920px;
             height: 1280px;
@@ -39,10 +39,9 @@
             transform-origin: center;
         }
 
-        /* --- TÍTULO Y FIRMA FIJOS --- */
         .main-title {
             position: absolute;
-            top: 60px; /* Centrado en el nuevo margen superior de 160px */
+            top: 60px;
             left: 0;
             width: 100%;
             text-align: center;
@@ -58,8 +57,8 @@
 
         .watermark {
             position: absolute;
-            bottom: 20px; /* Centrado en el nuevo margen inferior de 160px */
-            left: 80px;
+            bottom: 20px;
+            right: 80px;
             font-size: 14px;
             color: var(--text-muted);
             font-weight: 500;
@@ -67,7 +66,24 @@
             z-index: 500;
         }
 
-        /* CONTENEDORES: Mantienen su altura original porque 1280 - 160(top) - 160(bottom) = 960px, exactamente igual que antes */
+        /* --- CONTROLES UI (NUEVO) --- */
+        .controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 80px;
+            font-size: 14px;
+            color: rgba(100, 116, 139, 0.7);
+            background: rgba(15, 23, 42, 0.8);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--line-color);
+            z-index: 500;
+            backdrop-filter: blur(5px);
+            transition: color 0.3s;
+        }
+        .controls-hint:hover { color: var(--text-main); }
+        .controls-hint b { color: var(--color-comp); }
+
         .dashboard {
             position: absolute;
             top: 160px; left: 80px; right: 80px; bottom: 160px;
@@ -121,8 +137,7 @@
         .sist .shape { stroke: var(--color-sist); fill: var(--color-sist); }
         .elec .shape { stroke: var(--color-elec); fill: var(--color-elec); }
 
-        /* --- COREOGRAFÍA --- */
-        
+        /* --- COREOGRAFÍA AUTOMÁTICA --- */
         .card.comp { animation-name: compAnim; }
         @keyframes compAnim {
             0%, 10% { transform: translate(calc(50% + 20px), calc(50% + 20px)) scale(1.5); opacity: 1; z-index: 100; border-color: white; box-shadow: 0 0 50px rgba(255,255,255,0.1); }
@@ -198,6 +213,8 @@
         .scroll-content { 
             display: flex; flex-direction: column; gap: 12px; padding-top: 50px; 
             animation: syllabusScroll var(--tiempo-total) infinite linear; 
+            /* En modo manual o pausa, el translate es manejado por JS a través de esta variable */
+            margin-top: var(--manual-scroll);
         }
 
         @keyframes syllabusScroll {
@@ -213,25 +230,168 @@
             border-bottom: 2px solid #334155; padding-bottom: 5px; 
         }
 
-        .subject { font-size: 1.35rem; padding: 16px 22px; border-radius: 12px; font-weight: 700; }
+        .subject { font-size: 1.35rem; padding: 16px 22px; border-radius: 12px; font-weight: 700; transition: background 0.2s; }
+        .subject:hover { filter: brightness(1.2); }
         .subject.cb { background: var(--color-cb); border: 1px solid #475569; color: #cbd5e1; }
         .subject.sw { background: rgba(139, 92, 246, 0.1); border-left: 8px solid var(--color-sist); }
         .subject.hw { background: rgba(234, 179, 8, 0.1); border-left: 8px solid var(--color-elec); }
         .subject.nw { background: rgba(236, 72, 153, 0.1); border-left: 8px solid var(--color-info); }
+
+
+        /* =========================================
+           LÓGICA CSS DE MODO MANUAL Y PAUSA
+           ========================================= */
+        
+        /* PAUSA GLOBAL (Spacebar) */
+        body.is-paused *, 
+        body.is-paused .card, 
+        body.is-paused .plan-container, 
+        body.is-paused .scroll-content {
+            animation-play-state: paused !important;
+        }
+
+        /* MODO MANUAL (Teclas 1, 2, 3, 4, 5) */
+        body.manual-mode .card,
+        body.manual-mode .plan-container,
+        body.manual-mode .scroll-content {
+            animation: none !important; /* Detiene el loop de 100s */
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Estado apagado por defecto en modo manual */
+        body.manual-mode .card {
+            opacity: 0.15 !important;
+            transform: scale(1) translate(0,0) !important;
+            z-index: 1 !important;
+            border-color: var(--line-color) !important;
+            box-shadow: none !important;
+        }
+        body.manual-mode .plan-container {
+            opacity: 0 !important;
+            transform: translateX(100px) !important;
+            pointer-events: none !important;
+        }
+
+        /* CLASES DE ENFOQUE EXCLUSIVO */
+        body.show-card-1 .card.comp {
+            opacity: 1 !important; z-index: 100 !important;
+            transform: translate(calc(50% + 20px), calc(50% + 20px)) scale(1.5) !important;
+            border-color: var(--color-comp) !important;
+            box-shadow: 0 0 50px rgba(239, 68, 68, 0.3) !important;
+        }
+        body.show-card-2 .card.info {
+            opacity: 1 !important; z-index: 100 !important;
+            transform: translate(calc(-50% - 20px), calc(50% + 20px)) scale(1.5) !important;
+            border-color: var(--color-info) !important;
+            box-shadow: 0 0 50px rgba(236, 72, 153, 0.3) !important;
+        }
+        body.show-card-3 .card.sist {
+            opacity: 1 !important; z-index: 100 !important;
+            transform: translate(calc(50% + 20px), calc(-50% - 20px)) scale(1.5) !important;
+            border-color: var(--color-sist) !important;
+            box-shadow: 0 0 50px rgba(139, 92, 246, 0.3) !important;
+        }
+        body.show-card-4 .card.elec {
+            opacity: 1 !important; z-index: 100 !important;
+            transform: translate(calc(-50% - 20px), calc(-50% - 20px)) scale(1.5) !important;
+            border-color: var(--color-elec) !important;
+            box-shadow: 0 0 50px rgba(234, 179, 8, 0.3) !important;
+        }
+        body.show-plan .plan-container {
+            opacity: 1 !important;
+            transform: translateX(0) !important;
+            pointer-events: all !important;
+        }
 
     </style>
 </head>
 <body>
 
     <script>
+        /* Ajuste de Pantalla */
         function fitScreen() {
             const wrap = document.querySelector('.viewport');
-            // Ahora la escala se calcula sobre 1920x1280
             const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1280);
             wrap.style.transform = `scale(${scale})`;
         }
         window.addEventListener('resize', fitScreen);
         window.addEventListener('load', fitScreen);
+
+        /* =========================================
+           CONTROLADORES JAVASCRIPT
+           ========================================= */
+        let isPaused = false;
+        let isManualMode = false;
+        let scrollOffset = 0;
+        
+        document.addEventListener('keydown', (e) => {
+            // [ ESPACIO ]: Pausa / Reanuda todo (Incluso si estás en modo manual, lo frena)
+            if (e.code === 'Space') {
+                e.preventDefault();
+                isPaused = !isPaused;
+                document.body.classList.toggle('is-paused', isPaused);
+            }
+
+            // [ 1, 2, 3, 4, 5 ]: Entrar en Modo Manual y destacar elemento
+            if (['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad4', 'Numpad5'].includes(e.code)) {
+                isManualMode = true;
+                document.body.classList.add('manual-mode');
+                // Limpiamos selecciones anteriores
+                document.body.classList.remove('show-card-1', 'show-card-2', 'show-card-3', 'show-card-4', 'show-plan');
+                
+                if (e.code.includes('1')) document.body.classList.add('show-card-1');
+                if (e.code.includes('2')) document.body.classList.add('show-card-2');
+                if (e.code.includes('3')) document.body.classList.add('show-card-3');
+                if (e.code.includes('4')) document.body.classList.add('show-card-4');
+                if (e.code.includes('5')) {
+                    document.body.classList.add('show-plan');
+                    // Resetear el scroll interno al abrir el plan
+                    scrollOffset = 0; 
+                    document.documentElement.style.setProperty('--manual-scroll', '0px');
+                }
+            }
+
+            // [ R ] o [ ESC ]: Volver a modo Automático
+            if (e.code === 'KeyR' || e.code === 'Escape') {
+                isManualMode = false;
+                document.body.classList.remove('manual-mode', 'show-card-1', 'show-card-2', 'show-card-3', 'show-card-4', 'show-plan');
+                // Reinicia el scroll para que la animación automática tome el control bien
+                scrollOffset = 0;
+                document.documentElement.style.setProperty('--manual-scroll', '0px');
+            }
+
+            // [ FLECHAS ]: Scrollear manualmente el plan de estudios
+            if (isPaused || isManualMode) {
+                if (e.code === 'ArrowDown') { e.preventDefault(); scrollSyllabus(-60); }
+                if (e.code === 'ArrowUp')   { e.preventDefault(); scrollSyllabus(60); }
+            }
+        });
+
+        // [ RUEDA DEL MOUSE ]: Para scrollear el plan si está en manual o pausado
+        window.addEventListener('wheel', (e) => {
+            if (isPaused || isManualMode) {
+                scrollSyllabus(-e.deltaY);
+            }
+        });
+
+        // Lógica matemática para no scrollear al infinito
+        function scrollSyllabus(delta) {
+            const content = document.querySelector('.scroll-content');
+            const windowEl = document.querySelector('.scroll-window');
+            
+            const maxScrollTop = 0; // Límite superior
+            // Límite inferior: La altura total del texto menos la ventana visible, con un pequeño margen
+            const minScrollBottom = -(content.scrollHeight - windowEl.clientHeight + 80); 
+            
+            scrollOffset += delta;
+            
+            // Limitadores
+            if (scrollOffset > maxScrollTop) scrollOffset = maxScrollTop;
+            if (scrollOffset < minScrollBottom) scrollOffset = minScrollBottom;
+            
+            // Inyectamos el offset a CSS
+            document.documentElement.style.setProperty('--manual-scroll', scrollOffset + 'px');
+        }
     </script>
 
     <svg style="width:0;height:0;position:absolute;">
@@ -245,6 +405,10 @@
         
         <h1 class="main-title">Que nos diferencia: Ing en Computación</h1>
         <div class="watermark">ANIMACIÓN POR: ULISES RODRIGUEZ</div>
+
+        <div class="controls-hint">
+            ⌨️ <b>ESPACIO</b>: Pausar | <b>1-4</b>: Mostrar Carreras | <b>5</b>: Plan de Estudios | <b>R</b>: Volver a Automático | <b>⇅</b>: Scroll
+        </div>
 
         <div class="dashboard">
             <div class="card comp">
