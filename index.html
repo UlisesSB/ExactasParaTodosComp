@@ -12,7 +12,7 @@
   .header h1 { font-family: 'Playfair Display', serif; font-size: 40px; margin: 0; }
   .header h1 span { color: var(--accent); }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; width: 100%; max-width: 900px; padding: 20px; box-sizing: border-box; }
-  .card { background: var(--surface); border: 1px solid rgba(79,156,249,0.15); border-radius: 16px; padding: 30px; text-align: center; text-decoration: none; color: var(--text); transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+  .card { background: var(--surface); border: 1px solid rgba(79,156,249,0.15); border-radius: 16px; padding: 30px; text-align: center; text-decoration: none; color: var(--text); transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; justify-content: center;}
   .card:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 8px 25px rgba(79,156,249,0.2); }
   .card .icon { font-size: 40px; margin-bottom: 15px; }
   .card h2 { margin: 0 0 10px 0; font-size: 22px; color: var(--accent); }
@@ -25,20 +25,39 @@
     <p>Proyectos de Ingeniería en Computación</p>
   </div>
   <div class="grid">
+    <!-- 1. MAPA -->
     <a href="Mapa/mapa-ingenieros.html" class="card">
       <div class="icon">🌍</div>
       <h2>Mapa de Egresados</h2>
       <p>Visualizador global de ingenieros recibidos.</p>
     </a>
-    <a href="Carreras/index.html" class="card">
+    
+    <!-- 2. CARRERAS -->
+    <a href="Carreras/carreras.html" class="card">
       <div class="icon">🎓</div>
       <h2>Plan de Carreras</h2>
       <p>Información sobre las asignaturas y correlativas.</p>
     </a>
-    <a href="Escaner/index.html" class="card">
+    
+    <!-- 3. ESCÁNER -->
+    <a href="Escaner/escaner.html" class="card">
       <div class="icon">📱</div>
       <h2>Escáner</h2>
       <p>Sistema de lectura y validación interactiva.</p>
+    </a>
+
+    <!-- 4. VISIÓN ARTIFICIAL ASCII -->
+    <a href="CamaraASCII/ascii.html" class="card">
+      <div class="icon">🤖</div>
+      <h2>Retrato ASCII</h2>
+      <p>Algoritmo de visión artificial en tiempo real.</p>
+    </a>
+
+    <!-- 5. DRIVE COMPARTIDO -->
+    <a href="https://drive.google.com/drive/folders/1Oq8fMQRu19CRmrjB-AbkXOV-4FObWXWC?usp=drive_link" target="_blank" class="card">
+      <div class="icon">☁️</div>
+      <h2>Drive Compartido</h2>
+      <p>Documentos, recursos y material del stand.</p>
     </a>
   </div>
 </body>
