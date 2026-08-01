@@ -244,10 +244,27 @@ const iconNormal = L.divIcon({ className: 'custom-pulse-icon', html: '<div class
 const iconActivo = L.divIcon({ className: 'custom-pulse-icon active', html: '<div class="pulse-ring"></div><div class="pulse-dot"></div>', iconSize: [24,24], iconAnchor: [12,12] });
 
 // ─── LÓGICA DE MAPA ───
-function loadEngineers() { 
+async function loadEngineers() { 
   try { 
-    const data = JSON.parse(localStorage.getItem('ingenieros') || '[]'); 
-    return data.filter(e => e.active !== false);
+    let data = JSON.parse(localStorage.getItem('ingenieros') || '[]'); 
+    
+    // Si la memoria está vacía, intentamos descargar el archivo json
+    if(data.length === 0) {
+      try {
+        const response = await fetch('ingenieros.json');
+        if (response.ok) {
+          data = await response.json();
+          // Lo guardamos en memoria para que no tenga que descargarlo cada vez
+          localStorage.setItem('ingenieros', JSON.stringify(data));
+        }
+      } catch (err) {
+        console.log("No se encontró el archivo ingenieros.json local");
+      }
+    }
+    
+    // En el caso del admin no se filtra, pero en el mapa sí. 
+    // Puedes dejarlo así, el mapa filtrará a los inactivos de todas formas.
+    return data;
   } catch(e) { return []; } 
 }
 let engineers = []; let marcadoresLeaflet = []; let currentIdx = -1; let paused = false; let progressTimer = null; let progressStart = null; const DISPLAY_DURATION = 9000;
@@ -319,13 +336,27 @@ document.addEventListener('keydown', e => {
   if (e.code === 'ArrowLeft') { e.preventDefault(); prevEngineer(true); }
 });
 
-function init() { 
-  engineers = loadEngineers(); totalCounter.textContent = engineers.length; 
-  if (engineers.length === 0) { noData.style.display = 'flex'; statusText.textContent = 'Sin ingenieros cargados'; return; } 
-  noData.style.display = 'none'; renderDots(); engineers = engineers.sort(() => Math.random() - 0.5); currentIdx = -1; statusText.textContent = `${engineers.length} ingenieros listos`; 
+async function init() { 
+  const todosLosIngenieros = await loadEngineers();
+  
+  // Filtramos solo para el mapa (Si estás pegando esto en el admin, quita este filter)
+  engineers = todosLosIngenieros.filter(e => e.active !== false);
+  
+  totalCounter.textContent = engineers.length; 
+  if (engineers.length === 0) { 
+    noData.style.display = 'flex'; 
+    statusText.textContent = 'Sin ingenieros cargados'; 
+    return; 
+  } 
+  
+  noData.style.display = 'none'; 
+  renderDots(); 
+  engineers = engineers.sort(() => Math.random() - 0.5); 
+  currentIdx = -1; 
+  statusText.textContent = `${engineers.length} ingenieros listos`; 
+  
   setTimeout(() => showEngineer(0), 1200); 
 }
-
 window.addEventListener('storage', e => { if (e.key === 'ingenieros') init(); });
 init();
 </script>
