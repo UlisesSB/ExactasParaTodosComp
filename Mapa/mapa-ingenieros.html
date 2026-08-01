@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¿Dónde están hoy nuestros Ingenieros en Computación?</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+  :root {
+    --bg: #0a0e1a; --surface: #111827; --surface2: #1a2238;
+    --accent: #4f9cf9; --accent2: #a78bfa; --gold: #f5c542;
+    --text: #e8eaf0; --text-dim: #8892a4; --glow: rgba(79,156,249,0.35);
+    --sidebar-w: 380px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; overflow: hidden; height: 100vh; width: 100vw; }
+
+  header { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; display: flex; align-items: center; justify-content: space-between; padding: 18px 36px; background: linear-gradient(to bottom, rgba(10,14,26,0.98) 60%, transparent); pointer-events: none; }
+  .logo-area { display: flex; align-items: center; gap: 14px; pointer-events: auto; }
+  .logos-container { display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 8px 12px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
+  .logos-container img { height: 48px; width: auto; object-fit: contain; }
+  .logo-unt { border-left: 1px solid rgba(255,255,255,0.15); padding-left: 10px; }
+
+  .title-center { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; }
+  .title-center h1 { font-family: 'Playfair Display', serif; font-size: clamp(18px, 2.2vw, 30px); font-weight: 900; color: var(--text); letter-spacing: -0.01em; line-height: 1.2; text-shadow: 0 4px 10px rgba(0,0,0,0.8); }
+  .title-center h1 em { font-style: normal; color: var(--accent); }
+  .title-sub { font-size: 11px; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 4px; }
+
+  /* ── CONTROLES INFERIOR IZQUIERDA ── */
+  #bottom-left-controls { position: absolute; bottom: 30px; left: 36px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
+  .controls-row { display: flex; align-items: center; gap: 12px; }
+  
+  .counter-pill { background: rgba(26, 34, 56, 0.9); border: 1px solid rgba(79,156,249,0.3); border-radius: 20px; padding: 8px 16px; font-size: 13px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); backdrop-filter: blur(5px); text-decoration: none; transition: all 0.2s;}
+  .counter-pill .num { color: var(--accent); font-weight: 600; font-size: 15px; }
+  .counter-pill:hover { border-color: var(--accent); }
+  
+  #pause-btn { width: 40px; height: 40px; background: rgba(26, 34, 56, 0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; color: var(--text-dim); box-shadow: 0 4px 15px rgba(0,0,0,0.5); backdrop-filter: blur(5px); }
+  #pause-btn:hover { background: rgba(79,156,249,0.2); border-color: var(--accent); color: var(--accent); }
+  #pause-btn.paused { background: rgba(245,197,66,0.2); border-color: var(--gold); color: var(--gold); }
+  #pause-btn svg { width: 18px; height: 18px; }
+  
+  .credits-text { font-size: 9px; color: rgba(136, 146, 164, 0.7); letter-spacing: 0.05em; text-transform: uppercase; padding-left: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+
+  #map-container { width: 100vw; height: 100vh; position: relative; overflow: hidden; background-color: var(--bg); }
+  #map { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+  #map-overlay { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 30%, rgba(10,14,26,0.6) 100%); pointer-events: none; z-index: 2; }
+  .leaflet-control-attribution { display: none; }
+
+  .custom-pulse-icon { display: flex; align-items: center; justify-content: center; }
+  .pulse-ring { position: absolute; width: 24px; height: 24px; background: rgba(79,156,249,0.4); border-radius: 50%; animation: pulse 2s infinite ease-out; }
+  .pulse-dot { position: absolute; width: 10px; height: 10px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); transition: all 0.3s; }
+  .custom-pulse-icon.active .pulse-dot { background: var(--gold); box-shadow: 0 0 15px var(--gold); }
+  .custom-pulse-icon.active .pulse-ring { background: rgba(245,197,66,0.4); }
+  @keyframes pulse { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+
+  #sidebar { position: fixed; top: 0; right: 0; width: var(--sidebar-w); height: 100vh; background: linear-gradient(160deg, rgba(17,24,39,0.97) 0%, rgba(26,34,56,0.97) 100%); border-left: 1px solid rgba(79,156,249,0.15); backdrop-filter: blur(20px); transform: translateX(calc(var(--sidebar-w) + 20px)); transition: transform 0.6s cubic-bezier(0.34,1.15,0.64,1); z-index: 1001; display: flex; flex-direction: column; overflow: hidden; }
+  #sidebar.open { transform: translateX(0); }
+  .sidebar-accent-bar { height: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2)); flex-shrink: 0; }
+  .sidebar-photo-area { position: relative; padding: 30px 26px 10px 26px; flex-shrink: 0; display: flex; justify-content: center; }
+  .sidebar-photo-area img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.05); }
+  .sidebar-content { padding: 10px 26px 26px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+  .sidebar-content::-webkit-scrollbar { width: 4px; }
+  .sidebar-content::-webkit-scrollbar-thumb { background: rgba(79,156,249,0.3); border-radius: 2px; }
+
+  .eng-name { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: var(--text); line-height: 1.2; margin-bottom: 4px; }
+  .eng-flag-country { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--accent); font-weight: 500; }
+  .eng-flag { font-size: 20px; }
+
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .info-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 12px 14px; }
+  .info-card .label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+  .info-card .value { font-size: 15px; font-weight: 600; color: var(--text); }
+  .info-card.full { grid-column: 1 / -1; }
+
+  .company-badge { background: linear-gradient(135deg, rgba(79,156,249,0.12), rgba(167,139,250,0.12)); border: 1px solid rgba(79,156,249,0.2); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+  .company-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .company-info .label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
+  .company-info .value { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.3; }
+
+  .bio-text { font-size: 13px; color: var(--text-dim); line-height: 1.7; font-style: italic; border-left: 2px solid var(--accent2); padding-left: 12px; }
+
+  .progress-bar-wrap { margin-top: auto; }
+  .progress-label { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .progress-track { height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; width: 0%; transition: width 0.1s linear; }
+
+  #status-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(17,24,39,0.8); border: 1px solid rgba(79,156,249,0.15); backdrop-filter: blur(10px); border-radius: 30px; padding: 8px 20px; font-size: 12px; color: var(--text-dim); z-index: 1000; display: flex; align-items: center; gap: 8px; }
+  .status-dot { width: 7px; height: 7px; background: #4ade80; border-radius: 50%; animation: blink 1.5s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+  #no-data { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; z-index: 2000; background: rgba(10,14,26,0.85); backdrop-filter: blur(8px); }
+  #no-data h2 { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--text); }
+  #no-data p { color: var(--text-dim); font-size: 15px; text-align: center; max-width: 380px; line-height: 1.6; }
+  #no-data a { margin-top: 8px; display: inline-block; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 14px; transition: opacity 0.2s; }
+  #no-data a:hover { opacity: 0.85; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-area">
+    <div class="logos-container" id="dynamic-logos" style="display:none;">
+      <img id="map-logo1" src="" alt="Logo 1" style="display:none;">
+      <img id="map-logo2" src="" alt="Logo 2" class="logo-unt" style="display:none;">
+    </div>
+  </div>
+
+  <div class="title-center">
+    <h1>¿Dónde están hoy nuestros<br><em>Ingenieros en Computación</em>?</h1>
+    <div class="title-sub">Recorrido por el mundo · Egresados</div>
+  </div>
+</header>
+
+<div id="bottom-left-controls">
+  <div class="controls-row">
+    <div class="counter-pill">
+      <span class="num" id="total-counter">0</span> &nbsp;ingenieros
+    </div>
+    
+    <!-- NUEVO BOTÓN: Volver al Admin -->
+    <a href="admin-ingenieros.html" class="counter-pill" style="text-decoration:none;" title="Volver al Panel de Administración">
+      ⚙️ Admin
+    </a>
+
+    <button id="pause-btn" title="Pausar/Reanudar animación (Espacio)">
+      <svg id="pause-icon" viewBox="0 0 16 16" fill="currentColor">
+        <rect x="3" y="2" width="4" height="12" rx="1"/>
+        <rect x="9" y="2" width="4" height="12" rx="1"/>
+      </svg>
+    </button>
+  </div>
+  <div class="credits-text">Desarrollo: Ulises Rodriguez</div>
+</div>
+
+<div id="map-container">
+  <div id="map"></div>
+  <div id="map-overlay"></div>
+</div>
+
+<div id="sidebar">
+  <div class="sidebar-accent-bar"></div>
+  <div class="sidebar-photo-area">
+    <img id="eng-photo" src="" alt="Foto" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'340\' height=\'340\' viewBox=\'0 0 340 340\'><rect width=\'340\' height=\'340\' fill=\'%231a2238\'/><text x=\'170\' y=\'190\' text-anchor=\'middle\' fill=\'%23445577\' font-size=\'80\'>👤</text></svg>'"/>
+  </div>
+  <div class="sidebar-content">
+    <div>
+      <div class="eng-name" id="eng-name">—</div>
+      <div class="eng-flag-country">
+        <span class="eng-flag" id="eng-flag">🌍</span>
+        <span id="eng-location">—</span>
+      </div>
+    </div>
+    <div class="company-badge">
+      <div class="company-icon">💼</div>
+      <div class="company-info">
+        <div class="label">Rol y Empresa</div>
+        <div class="value" id="eng-role-company">— en —</div>
+      </div>
+    </div>
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="label">Año de egreso</div>
+        <div class="value" id="eng-year">—</div>
+      </div>
+      <div class="info-card">
+        <div class="label">Edad</div>
+        <div class="value" id="eng-age">— años</div>
+      </div>
+      <div class="info-card full" id="bio-card" style="display:none">
+        <div class="label">Sobre mí</div>
+        <div class="bio-text" id="eng-bio">—</div>
+      </div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-label">
+        <span>Próximo ingeniero</span>
+        <span id="progress-sec">8s</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="status-bar">
+  <div class="status-dot"></div>
+  <span id="status-text">Cargando ingenieros…</span>
+</div>
+
+<div id="no-data" style="display:none">
+  <h2>No hay ingenieros cargados</h2>
+  <p>Usá el panel de administración para agregar ingenieros y sus datos al sistema.</p>
+  <a href="admin-ingenieros.html" target="_blank">Abrir Panel de Administración</a>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+// ─── CARGAR LOGOS DINÁMICOS ───
+function cargarLogosMapa() {
+  const config = JSON.parse(localStorage.getItem('mapa_config')) || {};
+  const container = document.getElementById('dynamic-logos');
+  const img1 = document.getElementById('map-logo1');
+  const img2 = document.getElementById('map-logo2');
+  let mostrar = false;
+  if (config.logo1) { img1.src = config.logo1; img1.style.display = 'block'; mostrar = true; } else { img1.style.display = 'none'; }
+  if (config.logo2) { img2.src = config.logo2; img2.style.display = 'block'; mostrar = true; } else { img2.style.display = 'none'; }
+  container.style.display = mostrar ? 'flex' : 'none';
+}
+window.addEventListener('storage', e => { if (e.key === 'mapa_config') cargarLogosMapa(); });
+cargarLogosMapa(); 
+
+// ─── DATA DE PAÍSES (COMO FALLBACK SI NO HAY COORDENADAS EXACTAS) ───
+const COUNTRY_COORDS = {
+  "Argentina":     {lat: -34.6037, lng: -58.3816, flag:"🇦🇷"}, "Brasil":        {lat: -23.5505, lng: -46.6333, flag:"🇧🇷"},
+  "Chile":         {lat: -33.4489, lng: -70.6693, flag:"🇨🇱"}, "Uruguay":       {lat: -34.9011, lng: -56.1645, flag:"🇺🇾"},
+  "Colombia":      {lat: 4.7110, lng: -74.0721, flag:"🇨🇴"}, "México":        {lat: 19.4326, lng: -99.1332, flag:"🇲🇽"},
+  "USA":           {lat: 37.7749, lng: -122.4194, flag:"🇺🇸"}, "Canadá":        {lat: 43.6510, lng: -79.3470, flag:"🇨🇦"},
+  "España":        {lat: 40.4168, lng: -3.7038, flag:"🇪🇸"}, "Francia":       {lat: 48.8566, lng: 2.3522, flag:"🇫🇷"},
+  "Alemania":      {lat: 52.5200, lng: 13.4050, flag:"🇩🇪"}, "Italia":        {lat: 41.9028, lng: 12.4964, flag:"🇮🇹"},
+  "UK":            {lat: 51.5074, lng: -0.1278, flag:"🇬🇧"}, "Países Bajos":  {lat: 52.3676, lng: 4.9041, flag:"🇳🇱"},
+  "Suecia":        {lat: 59.3293, lng: 18.0686, flag:"🇸🇪"}, "Noruega":       {lat: 59.9139, lng: 10.7522, flag:"🇳🇴"},
+  "Suiza":         {lat: 47.3769, lng: 8.5417, flag:"🇨🇭"}, "Portugal":      {lat: 38.7223, lng: -9.1393, flag:"🇵🇹"},
+  "Australia":     {lat: -33.8688, lng: 151.2093, flag:"🇦🇺"}, "Nueva Zelanda": {lat: -36.8485, lng: 174.7633, flag:"🇳🇿"},
+  "Japón":         {lat: 35.6762, lng: 139.6503, flag:"🇯🇵"}, "China":         {lat: 39.9042, lng: 116.4074, flag:"🇨🇳"},
+  "India":         {lat: 28.6139, lng: 77.2090, flag:"🇮🇳"}, "Singapur":      {lat: 1.3521, lng: 103.8198, flag:"🇸🇬"},
+  "Emiratos":      {lat: 25.2048, lng: 55.2708, flag:"🇦🇪"}, "Israel":        {lat: 32.0853, lng: 34.7818, flag:"🇮🇱"},
+  "Sudáfrica":     {lat: -33.9249, lng: 18.4241, flag:"🇿🇦"}, "Perú":          {lat: -12.0464, lng: -77.0428, flag:"🇵🇪"},
+  "Ecuador":       {lat: -0.1807, lng: -78.4678, flag:"🇪🇨"}, "Venezuela":     {lat: 10.4806, lng: -66.9036, flag:"🇻🇪"},
+  "Paraguay":      {lat: -25.2637, lng: -57.5759, flag:"🇵🇾"}, "Bolivia":       {lat: -16.4897, lng: -68.1193, flag:"🇧🇴"},
+  "Corea":         {lat: 37.5665, lng: 126.9780, flag:"🇰🇷"}, "Rusia":         {lat: 55.7558, lng: 37.6173, flag:"🇷🇺"},
+  "Polonia":       {lat: 52.2297, lng: 21.0122, flag:"🇵🇱"}, "Ucrania":       {lat: 50.4501, lng: 30.5234, flag:"🇺🇦"},
+  "Irlanda":       {lat: 53.3498, lng: -6.2603, flag:"🇮🇪"}, "Finlandia":     {lat: 60.1695, lng: 24.9354, flag:"🇫🇮"},
+  "Dinamarca":     {lat: 55.6761, lng: 12.5683, flag:"🇩🇰"},
+};
+
+// ─── INICIALIZACIÓN LEAFLET ───
+const mapa = L.map('map', { zoomControl: false, attributionControl: false, maxZoom: 7 }).setView([20, 0], 3);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(mapa);
+const iconNormal = L.divIcon({ className: 'custom-pulse-icon', html: '<div class="pulse-ring"></div><div class="pulse-dot"></div>', iconSize: [24,24], iconAnchor: [12,12] });
+const iconActivo = L.divIcon({ className: 'custom-pulse-icon active', html: '<div class="pulse-ring"></div><div class="pulse-dot"></div>', iconSize: [24,24], iconAnchor: [12,12] });
+
+// ─── LÓGICA DE MAPA ───
+function loadEngineers() { 
+  try { 
+    const data = JSON.parse(localStorage.getItem('ingenieros') || '[]'); 
+    return data.filter(e => e.active !== false);
+  } catch(e) { return []; } 
+}
+let engineers = []; let marcadoresLeaflet = []; let currentIdx = -1; let paused = false; let progressTimer = null; let progressStart = null; const DISPLAY_DURATION = 9000;
+const sidebar = document.getElementById('sidebar'); const pauseBtn = document.getElementById('pause-btn'); const pauseIcon = document.getElementById('pause-icon'); const statusText = document.getElementById('status-text'); const noData = document.getElementById('no-data'); const totalCounter = document.getElementById('total-counter');
+
+function renderDots() { 
+  marcadoresLeaflet.forEach(m => mapa.removeLayer(m)); marcadoresLeaflet = [];
+  engineers.forEach((eng, i) => { 
+    const cc = getCoords(eng); if (!cc) return; 
+    const marker = L.marker([cc.lat, cc.lng], { icon: iconNormal }).addTo(mapa);
+    marker.on('click', () => showEngineer(i, true)); marcadoresLeaflet[i] = marker;
+  }); 
+}
+
+// NUEVO: Prioriza Coordenadas Exactas sobre las coordenadas del país.
+function getCoords(eng) { 
+  let baseCoords = null;
+  const k = Object.keys(COUNTRY_COORDS).find(k => k.toLowerCase() === eng.country?.toLowerCase()); 
+  
+  if (k) baseCoords = COUNTRY_COORDS[k];
+  else if (COUNTRY_COORDS[eng.country]) baseCoords = COUNTRY_COORDS[eng.country];
+  
+  // Si el ingeniero tiene sus propias coordenadas de la ciudad, usarlas, sino fallback al país.
+  if (eng.lat && eng.lng) {
+    return { lat: eng.lat, lng: eng.lng, flag: baseCoords ? baseCoords.flag : "🌍" };
+  }
+  
+  return baseCoords; 
+}
+
+function showEngineer(idx, manual = false) { 
+  currentIdx = idx; const eng = engineers[idx]; 
+  document.getElementById('eng-photo').src = eng.photo || ''; document.getElementById('eng-name').textContent = eng.name || '—'; 
+  const cc = getCoords(eng); 
+  document.getElementById('eng-flag').textContent = cc ? cc.flag : '🌍'; document.getElementById('eng-location').textContent = `${eng.city || '—'}, ${eng.country || '—'}`; document.getElementById('eng-role-company').textContent = `${eng.role || '—'} en ${eng.company || '—'}`; document.getElementById('eng-year').textContent = eng.year || '—'; document.getElementById('eng-age').textContent = eng.age ? eng.age + ' años' : '—'; 
+  const bioCard = document.getElementById('bio-card'); 
+  if (eng.bio) { document.getElementById('eng-bio').textContent = eng.bio; bioCard.style.display = ''; } else { bioCard.style.display = 'none'; } 
+  sidebar.classList.add('open'); 
+  
+  if(cc) mapa.flyTo([cc.lat, cc.lng], 6, { animate: true, duration: 2.5 });
+  
+  marcadoresLeaflet.forEach(m => { if(m) m.setIcon(iconNormal); });
+  if (marcadoresLeaflet[idx]) marcadoresLeaflet[idx].setIcon(iconActivo);
+  statusText.textContent = `Mostrando: ${eng.name}`; 
+  if (!paused) startProgress(() => nextEngineer()); else stopProgress(); 
+}
+
+function nextEngineer(manual = false) { if (engineers.length === 0) return; const next = (currentIdx + 1) % engineers.length; showEngineer(next, manual); }
+function prevEngineer(manual = false) { if (engineers.length === 0) return; const prev = (currentIdx - 1 + engineers.length) % engineers.length; showEngineer(prev, manual); }
+
+function startProgress(callback) { 
+  stopProgress(); progressStart = Date.now(); const fill = document.getElementById('progress-fill'); const secEl = document.getElementById('progress-sec'); 
+  function tick() { 
+    const elapsed = Date.now() - progressStart; const pct = Math.min(100, (elapsed / DISPLAY_DURATION) * 100); fill.style.width = pct + '%'; const rem = Math.max(0, Math.ceil((DISPLAY_DURATION - elapsed) / 1000)); secEl.textContent = rem + 's'; 
+    if (pct < 100) progressTimer = requestAnimationFrame(tick); else callback(); 
+  } 
+  progressTimer = requestAnimationFrame(tick); 
+}
+
+function stopProgress() { if (progressTimer) cancelAnimationFrame(progressTimer); document.getElementById('progress-fill').style.width = '0%'; document.getElementById('progress-sec').textContent = '–'; }
+
+const PLAY_ICON = `<rect x="3" y="2" width="4" height="12" rx="1"/><rect x="9" y="2" width="4" height="12" rx="1"/>`; const PAUSE_ICON_SVG = `<polygon points="3,2 13,8 3,14"/>`;
+function togglePause() { paused = !paused; pauseBtn.classList.toggle('paused', paused); pauseIcon.innerHTML = paused ? PAUSE_ICON_SVG : PLAY_ICON; if (paused) { stopProgress(); statusText.textContent = '⏸ Animación pausada'; } else { startProgress(() => nextEngineer()); statusText.textContent = `Mostrando: ${engineers[currentIdx]?.name}`; } }
+pauseBtn.addEventListener('click', togglePause);
+
+document.addEventListener('keydown', e => { 
+  if (e.code === 'Space') { e.preventDefault(); togglePause(); }
+  if (e.code === 'ArrowRight') { e.preventDefault(); nextEngineer(true); }
+  if (e.code === 'ArrowLeft') { e.preventDefault(); prevEngineer(true); }
+});
+
+function init() { 
+  engineers = loadEngineers(); totalCounter.textContent = engineers.length; 
+  if (engineers.length === 0) { noData.style.display = 'flex'; statusText.textContent = 'Sin ingenieros cargados'; return; } 
+  noData.style.display = 'none'; renderDots(); engineers = engineers.sort(() => Math.random() - 0.5); currentIdx = -1; statusText.textContent = `${engineers.length} ingenieros listos`; 
+  setTimeout(() => showEngineer(0), 1200); 
+}
+
+window.addEventListener('storage', e => { if (e.key === 'ingenieros') init(); });
+init();
+</script>
+</body>
+</html>

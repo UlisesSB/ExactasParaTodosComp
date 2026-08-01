@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exposición: Carreras de Ingeniería (Resolución 1920x1280)</title>
+    <style>
+        :root {
+            --bg-color: #030712;
+            --card-bg: #0f172a;
+            --line-color: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #64748b;
+            
+            --color-comp: #ef4444;
+            --color-info: #ec4899;
+            --color-sist: #8b5cf6;
+            --color-elec: #eab308;
+            --color-cb:   #334155;
+            
+            --tiempo-total: 100s;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; overflow: hidden;
+        }
+
+        /* LIENZO AMPLIADO: Se sumaron 200px de alto (1280 en vez de 1080) para los márgenes */
+        .viewport {
+            width: 1920px;
+            height: 1280px;
+            background-color: var(--bg-color);
+            position: relative;
+            transform-origin: center;
+        }
+
+        /* --- TÍTULO Y FIRMA FIJOS --- */
+        .main-title {
+            position: absolute;
+            top: 60px; /* Centrado en el nuevo margen superior de 160px */
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 55px;
+            margin: 0;
+            color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-weight: 900;
+            z-index: 500;
+            text-shadow: 0 5px 20px rgba(0,0,0,0.8);
+        }
+
+        .watermark {
+            position: absolute;
+            bottom: 20px; /* Centrado en el nuevo margen inferior de 160px */
+            left: 80px;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+            letter-spacing: 1px;
+            z-index: 500;
+        }
+
+        /* CONTENEDORES: Mantienen su altura original porque 1280 - 160(top) - 160(bottom) = 960px, exactamente igual que antes */
+        .dashboard {
+            position: absolute;
+            top: 160px; left: 80px; right: 80px; bottom: 160px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 2px solid var(--line-color);
+            border-radius: 20px;
+            padding: 2.5rem;
+            display: flex; flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            
+            animation-duration: var(--tiempo-total); 
+            animation-iteration-count: infinite;
+            animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-title {
+            text-align: center; font-size: 2.2rem; margin: 0 0 1.5rem 0;
+            text-transform: uppercase; font-weight: 800; letter-spacing: 2px;
+        }
+
+        .chart-container { flex-grow: 1; width: 100%; display: flex; }
+        svg { width: 100%; height: 100%; overflow: visible; }
+
+        .grid-line { stroke: var(--line-color); stroke-width: 2.5; }
+        .axis-label { fill: var(--text-main); font-size: 16px; font-weight: 600; }
+        .bottom-label { fill: var(--text-muted); font-size: 14px; text-anchor: middle; font-weight: bold; }
+
+        .shape {
+            stroke-width: 6; fill-opacity: 0;
+            stroke-dasharray: 100; stroke-dashoffset: 100;
+            animation: slowDraw 6s ease-in-out infinite; 
+        }
+        
+        @keyframes slowDraw {
+            0% { stroke-dashoffset: 100; fill-opacity: 0; }
+            40% { stroke-dashoffset: 0; fill-opacity: 0; }
+            60%, 90% { stroke-dashoffset: 0; fill-opacity: 0.5; }
+            100% { stroke-dashoffset: 100; fill-opacity: 0; }
+        }
+
+        .comp .shape { stroke: var(--color-comp); fill: var(--color-comp); }
+        .info .shape { stroke: var(--color-info); fill: var(--color-info); }
+        .sist .shape { stroke: var(--color-sist); fill: var(--color-sist); }
+        .elec .shape { stroke: var(--color-elec); fill: var(--color-elec); }
+
+        /* --- COREOGRAFÍA --- */
+        
+        .card.comp { animation-name: compAnim; }
+        @keyframes compAnim {
+            0%, 10% { transform: translate(calc(50% + 20px), calc(50% + 20px)) scale(1.5); opacity: 1; z-index: 100; border-color: white; box-shadow: 0 0 50px rgba(255,255,255,0.1); }
+            12%, 13% { transform: translate(0,0) scale(1); opacity: 1; z-index: 1; border-color: var(--line-color); box-shadow: none; }
+            14%, 51% { opacity: 0.15; }
+            53%, 75% { transform: translate(0,0) scale(1); opacity: 1; } 
+            77%, 98% { transform: translate(-5%, calc(50% + 20px)) scale(1.05); opacity: 1; z-index: 100; border-color: var(--color-comp); box-shadow: 0 0 40px rgba(239, 68, 68, 0.3); }
+            100% { transform: translate(0,0) scale(1); opacity: 0; }
+        }
+
+        .card.info { animation-name: infoAnim; }
+        @keyframes infoAnim {
+            0%, 12% { transform: translate(0,0) scale(1); opacity: 0.15; z-index: 1; border-color: var(--line-color); box-shadow: none; }
+            14%, 24% { transform: translate(calc(-50% - 20px), calc(50% + 20px)) scale(1.5); opacity: 1; z-index: 100; border-color: white; box-shadow: 0 0 50px rgba(255,255,255,0.1); }
+            26%, 27% { transform: translate(0,0) scale(1); opacity: 1; z-index: 1; border-color: var(--line-color); box-shadow: none; }
+            28%, 51% { opacity: 0.15; }
+            53%, 75% { transform: translate(0,0) scale(1); opacity: 1; } 
+            77%, 100% { transform: translate(0,0) scale(1); opacity: 0; } 
+        }
+
+        .card.sist { animation-name: sistAnim; }
+        @keyframes sistAnim {
+            0%, 26% { transform: translate(0,0) scale(1); opacity: 0.15; z-index: 1; border-color: var(--line-color); box-shadow: none; }
+            28%, 38% { transform: translate(calc(50% + 20px), calc(-50% - 20px)) scale(1.5); opacity: 1; z-index: 100; border-color: white; box-shadow: 0 0 50px rgba(255,255,255,0.1); }
+            40%, 41% { transform: translate(0,0) scale(1); opacity: 1; z-index: 1; border-color: var(--line-color); box-shadow: none; }
+            42%, 51% { opacity: 0.15; }
+            53%, 75% { transform: translate(0,0) scale(1); opacity: 1; } 
+            77%, 100% { transform: translate(0,0) scale(1); opacity: 0; }
+        }
+
+        .card.elec { animation-name: elecAnim; }
+        @keyframes elecAnim {
+            0%, 40% { transform: translate(0,0) scale(1); opacity: 0.15; z-index: 1; border-color: var(--line-color); box-shadow: none; }
+            42%, 50% { transform: translate(calc(-50% - 20px), calc(-50% - 20px)) scale(1.5); opacity: 1; z-index: 100; border-color: white; box-shadow: 0 0 50px rgba(255,255,255,0.1); }
+            52%, 53% { transform: translate(0,0) scale(1); opacity: 1; z-index: 1; border-color: var(--line-color); box-shadow: none; }
+            53%, 75% { transform: translate(0,0) scale(1); opacity: 1; } 
+            77%, 100% { transform: translate(0,0) scale(1); opacity: 0; }
+        }
+
+        /* --- PLAN DE ESTUDIOS --- */
+        .plan-container {
+            position: absolute;
+            top: 160px; right: 60px; bottom: 160px; 
+            width: 700px; 
+            background: rgba(15, 23, 42, 0.95);
+            border: 3px solid #334155;
+            border-radius: 20px; padding: 40px;
+            box-shadow: -20px 0 60px rgba(0,0,0,0.5);
+            
+            animation: planAnim var(--tiempo-total) infinite cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            display: flex; flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        @keyframes planAnim {
+            0%, 75% { opacity: 0; transform: translateX(100px); }
+            77%, 98% { opacity: 1; transform: translateX(0); pointer-events: all; }
+            100% { opacity: 0; transform: translateX(100px); }
+        }
+
+        .plan-header { text-align: center; font-size: 2.8rem; margin: 0 0 30px 0; letter-spacing: 4px; }
+        .plan-legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-bottom: 30px; font-size: 1.1rem; }
+        
+        .badge { padding: 8px 16px; border-radius: 12px; font-weight: 800; text-transform: uppercase; }
+        .badge.cb { background: var(--color-cb); border: 2px solid #475569; }
+        .badge.sw { background: rgba(139, 92, 246, 0.2); border: 2px solid var(--color-sist); color: #c4b5fd; }
+        .badge.hw { background: rgba(234, 179, 8, 0.2); border: 2px solid var(--color-elec); color: #fde047; }
+        .badge.nw { background: rgba(236, 72, 153, 0.2); border: 2px solid var(--color-info); color: #f9a8d4; }
+
+        .scroll-window { flex-grow: 1; overflow: hidden; position: relative; mask-image: linear-gradient(to bottom, transparent, black 2%, black 98%, transparent); }
+        
+        .scroll-content { 
+            display: flex; flex-direction: column; gap: 12px; padding-top: 50px; 
+            animation: syllabusScroll var(--tiempo-total) infinite linear; 
+        }
+
+        @keyframes syllabusScroll {
+            0%, 75% { transform: translateY(0); }
+            98% { transform: translateY(calc(-100% + 800px)); } 
+            100% { transform: translateY(0); }
+        }
+
+        .year-divider { 
+            font-size: 1.6rem; font-weight: 800; color: var(--text-main); 
+            margin-top: 15px; margin-bottom: -5px; 
+            text-transform: uppercase; letter-spacing: 1px; 
+            border-bottom: 2px solid #334155; padding-bottom: 5px; 
+        }
+
+        .subject { font-size: 1.35rem; padding: 16px 22px; border-radius: 12px; font-weight: 700; }
+        .subject.cb { background: var(--color-cb); border: 1px solid #475569; color: #cbd5e1; }
+        .subject.sw { background: rgba(139, 92, 246, 0.1); border-left: 8px solid var(--color-sist); }
+        .subject.hw { background: rgba(234, 179, 8, 0.1); border-left: 8px solid var(--color-elec); }
+        .subject.nw { background: rgba(236, 72, 153, 0.1); border-left: 8px solid var(--color-info); }
+
+    </style>
+</head>
+<body>
+
+    <script>
+        function fitScreen() {
+            const wrap = document.querySelector('.viewport');
+            // Ahora la escala se calcula sobre 1920x1280
+            const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1280);
+            wrap.style.transform = `scale(${scale})`;
+        }
+        window.addEventListener('resize', fitScreen);
+        window.addEventListener('load', fitScreen);
+    </script>
+
+    <svg style="width:0;height:0;position:absolute;">
+        <defs>
+            <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#64748b" /></marker>
+            <marker id="arrowhead-start" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto-start-reverse"><path d="M0,0 L0,6 L6,3 z" fill="#64748b" /></marker>
+        </defs>
+    </svg>
+
+    <div class="viewport">
+        
+        <h1 class="main-title">Que nos diferencia: Ing en Computación</h1>
+        <div class="watermark">ANIMACIÓN POR: ULISES RODRIGUEZ</div>
+
+        <div class="dashboard">
+            <div class="card comp">
+                <h2 class="card-title" style="color: var(--color-comp)">Ing. en Computación</h2>
+                <div class="chart-container">
+                    <svg viewBox="0 0 500 300">
+                        <g transform="translate(0,10)">
+                            <text x="10" y="40" class="axis-label">Negocios</text><line x1="120" y1="40" x2="480" y2="40" class="grid-line" />
+                            <text x="10" y="80" class="axis-label">Tec. Aplicada</text><line x1="120" y1="80" x2="480" y2="80" class="grid-line" />
+                            <text x="10" y="120" class="axis-label">Software</text><line x1="120" y1="120" x2="480" y2="120" class="grid-line" />
+                            <text x="10" y="160" class="axis-label">Redes</text><line x1="120" y1="160" x2="480" y2="160" class="grid-line" />
+                            <text x="10" y="200" class="axis-label">Hardware</text><line x1="120" y1="200" x2="480" y2="200" class="grid-line" />
+                        </g>
+                        <line x1="140" y1="250" x2="460" y2="250" style="stroke:var(--text-muted); stroke-width:2; fill:none; marker-end:url(#arrowhead); marker-start:url(#arrowhead-start);" />
+                        <text x="150" y="275" class="bottom-label">Teoría</text><text x="450" y="275" class="bottom-label">Práctica</text>
+                        <path class="shape" pathLength="100" d="M 120 240 L 120 180 C 120 60, 480 60, 480 180 L 480 240 Z" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="card info">
+                <h2 class="card-title" style="color: var(--color-info)">Ing. Informática</h2>
+                <div class="chart-container">
+                    <svg viewBox="0 0 500 300">
+                        <g transform="translate(0,10)">
+                            <text x="10" y="40" class="axis-label">Negocios</text><line x1="120" y1="40" x2="480" y2="40" class="grid-line" />
+                            <text x="10" y="80" class="axis-label">Tec. Aplicada</text><line x1="120" y1="80" x2="480" y2="80" class="grid-line" />
+                            <text x="10" y="120" class="axis-label">Software</text><line x1="120" y1="120" x2="480" y2="120" class="grid-line" />
+                            <text x="10" y="160" class="axis-label">Redes</text><line x1="120" y1="160" x2="480" y2="160" class="grid-line" />
+                            <text x="10" y="200" class="axis-label">Hardware</text><line x1="120" y1="200" x2="480" y2="200" class="grid-line" />
+                        </g>
+                        <line x1="140" y1="250" x2="460" y2="250" style="stroke:var(--text-muted); stroke-width:2; fill:none; marker-end:url(#arrowhead); marker-start:url(#arrowhead-start);" />
+                        <text x="150" y="275" class="bottom-label">Teoría</text><text x="450" y="275" class="bottom-label">Práctica</text>
+                        <path class="shape" pathLength="100" d="M 140 130 A 160 50 0 1 0 460 130 A 160 50 0 1 0 140 130" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="card sist">
+                <h2 class="card-title" style="color: var(--color-sist)">Ing. en Sistemas (UTN)</h2>
+                <div class="chart-container">
+                    <svg viewBox="0 0 500 300">
+                        <g transform="translate(0,10)">
+                            <text x="10" y="40" class="axis-label">Negocios</text><line x1="120" y1="40" x2="480" y2="40" class="grid-line" />
+                            <text x="10" y="80" class="axis-label">Tec. Aplicada</text><line x1="120" y1="80" x2="480" y2="80" class="grid-line" />
+                            <text x="10" y="120" class="axis-label">Software</text><line x1="120" y1="120" x2="480" y2="120" class="grid-line" />
+                            <text x="10" y="160" class="axis-label">Redes</text><line x1="120" y1="160" x2="480" y2="160" class="grid-line" />
+                            <text x="10" y="200" class="axis-label">Hardware</text><line x1="120" y1="200" x2="480" y2="200" class="grid-line" />
+                        </g>
+                        <line x1="140" y1="250" x2="460" y2="250" style="stroke:var(--text-muted); stroke-width:2; fill:none; marker-end:url(#arrowhead); marker-start:url(#arrowhead-start);" />
+                        <text x="150" y="275" class="bottom-label">Teoría</text><text x="450" y="275" class="bottom-label">Práctica</text>
+                        <path class="shape" pathLength="100" d="M 480 40 L 220 40 C 130 40, 130 150, 220 150 L 480 150 Z" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="card elec">
+                <h2 class="card-title" style="color: var(--color-elec)">Ing. Electrónica</h2>
+                <div class="chart-container">
+                    <svg viewBox="0 0 500 300">
+                        <g transform="translate(0,10)">
+                            <text x="10" y="40" class="axis-label">Negocios</text><line x1="120" y1="40" x2="480" y2="40" class="grid-line" />
+                            <text x="10" y="80" class="axis-label">Tec. Aplicada</text><line x1="120" y1="80" x2="480" y2="80" class="grid-line" />
+                            <text x="10" y="120" class="axis-label">Software</text><line x1="120" y1="120" x2="480" y2="120" class="grid-line" />
+                            <text x="10" y="160" class="axis-label">Redes</text><line x1="120" y1="160" x2="480" y2="160" class="grid-line" />
+                            <text x="10" y="200" class="axis-label">Hardware</text><line x1="120" y1="200" x2="480" y2="200" class="grid-line" />
+                        </g>
+                        <line x1="140" y1="250" x2="460" y2="250" style="stroke:var(--text-muted); stroke-width:2; fill:none; marker-end:url(#arrowhead); marker-start:url(#arrowhead-start);" />
+                        <text x="150" y="275" class="bottom-label">Teoría</text><text x="450" y="275" class="bottom-label">Práctica</text>
+                        <path class="shape" pathLength="100" d="M 120 210 L 120 160 C 140 130, 170 90, 210 90 C 260 90, 310 180, 360 190 C 410 200, 480 210, 480 210 Z" />
+                    </svg>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="plan-container">
+            <h1 class="plan-header">PLAN DE ESTUDIOS</h1>
+            <div class="plan-legend">
+                <span class="badge cb">Ciencias Básicas</span>
+                <span class="badge sw">Software</span>
+                <span class="badge hw">Hardware</span>
+                <span class="badge nw">Redes</span>
+            </div>
+            
+            <div class="scroll-window">
+                <div class="scroll-content">
+                    <div class="year-divider">1er Año:</div>
+                    <div class="subject cb">Cálculo I</div>
+                    <div class="subject cb">Álgebra y Geometría Analítica</div>
+                    <div class="subject cb">Física I</div>
+                    <div class="subject cb">Fundamentos de Química General</div>
+                    <div class="subject cb">Cálculo II</div>
+                    <div class="subject cb">Elementos de Álgebra Lineal</div>
+                    <div class="subject cb">Física II</div>
+                    <div class="subject cb">Informática</div>
+                    <div class="subject cb">Sistemas de Representación</div>
+                    
+                    <div class="year-divider">2do Año:</div>
+                    <div class="subject cb">Cálculo III</div>
+                    <div class="subject hw">Circuitos Eléctricos I</div>
+                    <div class="subject cb">Física III</div>
+                    <div class="subject sw">Programación I</div>
+                    <div class="subject cb">Cálculo IV</div>
+                    <div class="subject sw">Programación II</div>
+                    <div class="subject cb">Probabilidad y Estadística</div>
+                    <div class="subject hw">Electrónica I</div>
+                    
+                    <div class="year-divider">3er Año:</div>
+                    <div class="subject sw">Estructuras de Datos y Algoritmos</div>
+                    <div class="subject hw">Diseño Lógico I</div>
+                    <div class="subject hw">Materiales y Dispositivos Electrónicos</div>
+                    <div class="subject cb">Lógica y Álgebra Discreta</div>
+                    <div class="subject hw">Sistemas con Microprocesadores y Microcontroladores</div>
+                    <div class="subject nw">Fundamentos de Redes de Computadoras</div>
+                    <div class="subject cb">Métodos Numéricos</div>
+                    
+                    <div class="year-divider">4to Año:</div>
+                    <div class="subject sw">Bases de Datos</div>
+                    <div class="subject nw">Fundamentos de Telecomunicaciones</div>
+                    <div class="subject hw">Arquitectura de Computadoras</div>
+                    <div class="subject sw">Ingeniería de Software I</div>
+                    <div class="subject sw">Inteligencia Artificial</div>
+                    <div class="subject cb">Taller de Legislación y Organizaciones</div>
+                    <div class="subject sw">Sistemas Operativos</div>
+                    <div class="subject nw">Transmisión de Datos</div>
+                    
+                    <div class="year-divider">5to Año:</div>
+                    <div class="subject nw">Protocolos de Comunicación TCP/IP</div>
+                    <div class="subject cb">Administración de Proyectos</div>
+                    <div class="subject nw">Redes de Área Extendida</div>
+                    <div class="subject cb">Gestión Ambiental, Salud Ocupacional y Seguridad</div>
+                    <div class="subject hw">Procesamiento Digital de Señales</div>
+                    <div class="subject cb">Gestión de Tecnología de la Información</div>
+                    <div class="subject sw">Laboratorio de Base de Datos</div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</body>
+</html>

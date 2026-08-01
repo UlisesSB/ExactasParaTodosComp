@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Administración · Ingenieros en Computación</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- Cropper CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+<style>
+  :root {
+    --bg: #0d1525; --surface: #111827; --surface2: #1a2238; --surface3: #1f2d47;
+    --accent: #4f9cf9; --accent2: #a78bfa; --gold: #f5c542; --red: #f87171;
+    --green: #4ade80; --text: #e8eaf0; --text-dim: #8892a4; --border: rgba(79,156,249,0.15);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100vh; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-badge { width: 44px; height: 44px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 14px rgba(79,156,249,0.3); }
+  .logo-badge svg { width: 24px; height: 24px; }
+  .header-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; }
+  .header-title span { color: var(--accent); }
+  .header-sub { font-size: 12px; color: var(--text-dim); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .count-badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; font-size: 13px; color: var(--text-dim); }
+  .count-badge strong { color: var(--accent); }
+  .btn-open-map { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; text-decoration: none; padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; transition: opacity 0.2s; }
+  .btn-open-map:hover { opacity: 0.85; }
+  
+  .page { display: grid; grid-template-columns: 420px 1fr; gap: 0; height: calc(100vh - 81px); }
+  .form-panel { background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto; padding: 28px; display: flex; flex-direction: column; gap: 20px; }
+  .form-panel::-webkit-scrollbar { width: 4px; }
+  .form-panel::-webkit-scrollbar-thumb { background: rgba(79,156,249,0.25); border-radius: 2px; }
+  .section-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent2); font-weight: 600; margin-bottom: -8px; }
+  
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 13px; color: var(--text-dim); font-weight: 500; }
+  .field input, .field select, .field textarea { background: var(--surface2); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 14px; padding: 10px 14px; width: 100%; transition: border-color 0.2s, box-shadow 0.2s; outline: none; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,156,249,0.12); }
+  .field textarea { resize: vertical; min-height: 70px; }
+  
+  /* Photo Preview */
+  .photo-options { display: flex; gap: 10px; flex-direction: column; }
+  .photo-preview { width: 100%; height: 150px; border-radius: 8px; overflow: hidden; background: var(--surface2); border: 2px dashed rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; cursor: pointer; transition: border-color 0.2s; position: relative; }
+  .photo-preview:hover { border-color: var(--accent); }
+  .photo-preview img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; display: none; }
+  .photo-preview .upload-hint { font-size: 12px; color: var(--text-dim); text-align: center; }
+  .photo-preview .upload-icon { font-size: 28px; }
+  #photo-input { display: none; }
+  .drive-input-container { display: flex; flex-direction: column; gap: 5px; }
+  .or-divider { text-align: center; font-size: 11px; color: var(--text-dim); text-transform: uppercase; margin: -5px 0; }
+  
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .btn-add { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600; padding: 14px; cursor: pointer; width: 100%; transition: opacity 0.2s, transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-add:hover { opacity: 0.9; }
+  .btn-add:active { transform: scale(0.98); }
+  
+  .btn-clear-all { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); border-radius: 8px; color: var(--red); font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 500; padding: 10px; cursor: pointer; width: 100%; transition: background 0.2s; }
+  .btn-clear-all:hover { background: rgba(248,113,113,0.2); }
+  .divider { height: 1px; background: var(--border); }
+  
+  .list-panel { overflow-y: auto; padding: 28px; display: flex; flex-direction: column; gap: 14px; }
+  .list-panel::-webkit-scrollbar { width: 4px; }
+  .list-panel::-webkit-scrollbar-thumb { background: rgba(79,156,249,0.25); border-radius: 2px; }
+  .list-header { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 10px; }
+  .list-header span { font-size: 13px; font-family: 'Outfit', sans-serif; color: var(--text-dim); font-weight: 400; }
+  
+  .eng-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; transition: all 0.3s ease; animation: slideIn 0.3s ease; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .eng-card:hover { border-color: rgba(79,156,249,0.3); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+  .eng-card.inactive { opacity: 0.45; border-color: rgba(255,255,255,0.05); filter: grayscale(0.5); }
+  .eng-card.inactive:hover { opacity: 0.8; filter: grayscale(0); }
+  
+  .eng-card-photo { width: 52px; height: 52px; border-radius: 10px; overflow: hidden; background: var(--surface2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .eng-card-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+  .eng-card-info { flex: 1; min-width: 0; }
+  .eng-card-name { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px;}
+  .eng-card-meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .eng-card-tags { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  
+  .tag { background: rgba(79,156,249,0.1); border: 1px solid rgba(79,156,249,0.2); border-radius: 4px; padding: 2px 8px; font-size: 11px; color: var(--accent); }
+  .tag.danger { background: rgba(248,113,113,0.15); border-color: rgba(248,113,113,0.3); color: var(--red); }
+  
+  .eng-card-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .btn-icon { width: 32px; height: 32px; border: 1px solid rgba(255,255,255,0.1); border-radius: 7px; background: transparent; color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: background 0.2s, border-color 0.2s, color 0.2s; }
+  .btn-icon.delete:hover { background: rgba(248,113,113,0.15); border-color: var(--red); color: var(--red); }
+  .btn-icon.edit:hover { background: rgba(79,156,249,0.15); border-color: var(--accent); color: var(--accent); }
+  .btn-icon.toggle:hover { background: rgba(245,197,66,0.15); border-color: var(--gold); color: var(--gold); }
+  
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text); margin-bottom: 8px; }
+  
+  #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface2); border: 1px solid rgba(74,222,128,0.3); border-radius: 10px; padding: 12px 22px; font-size: 14px; font-weight: 500; color: var(--green); opacity: 0; transition: opacity 0.3s, transform 0.3s; z-index: 999; pointer-events: none; white-space: nowrap; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  
+  .import-export { display: flex; gap: 8px; }
+  .btn-secondary { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-dim); font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 500; padding: 9px 12px; cursor: pointer; transition: background 0.2s, color 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn-secondary:hover { background: var(--surface3); color: var(--text); }
+  #import-input { display: none; }
+
+  /* Modal para Cropper */
+  #crop-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; flex-direction: column; backdrop-filter: blur(5px); }
+  .crop-container { width: 90%; max-width: 500px; height: 500px; background: var(--surface); padding: 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+  .crop-area { flex: 1; overflow: hidden; background: #000; border-radius: 8px; margin-bottom: 15px; }
+  .crop-area img { max-width: 100%; display: block; }
+  .crop-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .btn-crop-cancel { background: transparent; color: var(--text); border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+  .btn-crop-save { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo-badge">
+      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="7" y="7" width="14" height="14" rx="2" fill="white" fill-opacity="0.15" stroke="white" stroke-width="1.5"/>
+        <rect x="10" y="10" width="8" height="8" rx="1" fill="white" fill-opacity="0.9"/>
+        <line x1="10" y1="4" x2="10" y2="7" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="14" y1="4" x2="14" y2="7" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="18" y1="4" x2="18" y2="7" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="10" y1="21" x2="10" y2="24" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="14" y1="21" x2="14" y2="24" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="18" y1="21" x2="18" y2="24" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="4" y1="10" x2="7" y2="10" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="4" y1="14" x2="7" y2="14" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="4" y1="18" x2="7" y2="18" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="21" y1="10" x2="24" y2="10" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="21" y1="14" x2="24" y2="14" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="21" y1="18" x2="24" y2="18" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="header-title">Panel de <span>Administración</span></div>
+      <div class="header-sub">Ingenieros en Computación · Exposición</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="count-badge">Total: <strong id="hdr-count">0</strong> ingenieros</div>
+    <a href="mapa-ingenieros.html" target="_blank" class="btn-open-map">🗺 Ver Mapa</a>
+  </div>
+</header>
+
+<div class="page">
+  <!-- ── FORM PANEL ── -->
+  <div class="form-panel">
+    <div class="section-label">Datos del ingeniero</div>
+
+    <!-- NUEVO: Soporte de Drive y Cropper -->
+    <div class="field photo-options">
+      <label>Foto de Perfil</label>
+      <div class="photo-preview" id="photo-drop" onclick="document.getElementById('photo-input').click()">
+        <img id="photo-preview-img" src="" alt="">
+        <div class="upload-icon">📷</div>
+        <div class="upload-hint">Clic para subir y recortar 1:1<br><small>JPG, PNG</small></div>
+      </div>
+      <input type="file" id="photo-input" accept="image/*">
+      
+      <div class="or-divider">O también</div>
+      <div class="drive-input-container">
+        <input type="text" id="f-drive" placeholder="Pegar URL de Google Drive o Link directo">
+      </div>
+    </div>
+
+    <div class="field"><label>Nombre completo *</label><input type="text" id="f-name" placeholder="Ej: María López García"></div>
+    <div class="row-2">
+      <div class="field"><label>Año de egreso *</label><input type="number" id="f-year" placeholder="2020" min="1980" max="2030"></div>
+      <div class="field"><label>Edad *</label><input type="number" id="f-age" placeholder="28" min="18" max="80"></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-label">Ubicación exacta</div>
+    <div class="field">
+      <label>País *</label>
+      <select id="f-country">
+        <option value="">Seleccionar país…</option>
+        <option>Argentina</option><option>Brasil</option><option>Chile</option><option>Uruguay</option><option>Colombia</option><option>Perú</option><option>Ecuador</option><option>Venezuela</option><option>Bolivia</option><option>Paraguay</option><option>México</option><option>USA</option><option>Canadá</option><option>España</option><option>Francia</option><option>Alemania</option><option>Italia</option><option>UK</option><option>Países Bajos</option><option>Suecia</option><option>Noruega</option><option>Finlandia</option><option>Dinamarca</option><option>Suiza</option><option>Portugal</option><option>Polonia</option><option>Ucrania</option><option>Rusia</option><option>Irlanda</option><option>Australia</option><option>Nueva Zelanda</option><option>Japón</option><option>China</option><option>India</option><option>Singapur</option><option>Corea</option><option>Emiratos</option><option>Israel</option><option>Sudáfrica</option>
+      </select>
+    </div>
+    <div class="field"><label>Ciudad (Para mostrar en texto)</label><input type="text" id="f-city" placeholder="Ej: Buenos Aires"></div>
+    
+    <!-- NUEVO: Coordenadas Exactas -->
+    <div class="row-2">
+      <div class="field"><label>Latitud exacta (Opcional)</label><input type="number" step="any" id="f-lat" placeholder="Ej: -34.6037"></div>
+      <div class="field"><label>Longitud exacta (Opcional)</label><input type="number" step="any" id="f-lng" placeholder="Ej: -58.3816"></div>
+    </div>
+    <p style="font-size: 11px; color: var(--text-dim); margin-top:-5px; margin-bottom:5px;">Si dejas las coordenadas vacías, el mapa centrará el punto en el país automáticamente.</p>
+
+    <div class="divider"></div>
+    <div class="section-label">Trayectoria profesional</div>
+    <div class="field"><label>Empresa actual *</label><input type="text" id="f-company" placeholder="Ej: Google, MercadoLibre…"></div>
+    <div class="field"><label>Rol / Cargo</label><input type="text" id="f-role" placeholder="Ej: Senior Software Engineer"></div>
+    <div class="field"><label>Comentario breve (opcional)</label><textarea id="f-bio" placeholder="Una frase corta sobre su experiencia o mensaje para la exposición…"></textarea></div>
+
+    <button class="btn-add" onclick="addEngineer()"><span id="btn-label">＋ Agregar Ingeniero</span></button>
+
+    <div class="divider"></div>
+    <div class="section-label">Configuración del Mapa (Opcional)</div>
+    <div class="row-2">
+      <div class="field"><label>Logo Izquierdo</label><input type="file" id="logo1-input" accept="image/*" style="font-size:12px; padding: 6px;"><img id="logo1-preview" src="" style="display:none; height:40px; object-fit:contain; margin-top:8px; border-radius:4px;"></div>
+      <div class="field"><label>Logo Derecho</label><input type="file" id="logo2-input" accept="image/*" style="font-size:12px; padding: 6px;"><img id="logo2-preview" src="" style="display:none; height:40px; object-fit:contain; margin-top:8px; border-radius:4px;"></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="import-export">
+      <button class="btn-secondary" onclick="exportData()">⬇ Exportar JSON</button>
+      <button class="btn-secondary" onclick="document.getElementById('import-input').click()">⬆ Importar JSON</button>
+      <input type="file" id="import-input" accept=".json">
+    </div>
+    <button class="btn-clear-all" onclick="clearAll()">🗑 Borrar todos</button>
+  </div>
+
+  <div class="list-panel" id="list-panel">
+    <div class="list-header">Ingenieros cargados<span id="list-count">0 en total</span></div>
+    <div id="eng-list"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Modal para Recorte de Imagen -->
+<div id="crop-modal">
+  <div class="crop-container">
+    <div class="crop-area">
+      <img id="image-to-crop" src="">
+    </div>
+    <div class="crop-actions">
+      <button class="btn-crop-cancel" onclick="closeCropper()">Cancelar</button>
+      <button class="btn-crop-save" onclick="saveCrop()">Recortar 1:1</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cropper JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+<script>
+// ─── CARGA DE LOGOS ──────────────────────────────────────
+let appConfig = JSON.parse(localStorage.getItem('mapa_config')) || {};
+if(appConfig.logo1) { document.getElementById('logo1-preview').src = appConfig.logo1; document.getElementById('logo1-preview').style.display = 'block'; }
+if(appConfig.logo2) { document.getElementById('logo2-preview').src = appConfig.logo2; document.getElementById('logo2-preview').style.display = 'block'; }
+
+function handleLogoUpload(e, key, previewId) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    appConfig[key] = ev.target.result;
+    localStorage.setItem('mapa_config', JSON.stringify(appConfig));
+    document.getElementById(previewId).src = ev.target.result; document.getElementById(previewId).style.display = 'block';
+    showToast('✅ Logo del mapa actualizado');
+  };
+  reader.readAsDataURL(file);
+}
+document.getElementById('logo1-input').addEventListener('change', e => handleLogoUpload(e, 'logo1', 'logo1-preview'));
+document.getElementById('logo2-input').addEventListener('change', e => handleLogoUpload(e, 'logo2', 'logo2-preview'));
+
+// ─── DATA DE INGENIEROS Y CROPPER ────────────────────────────────
+function loadData() { try { return JSON.parse(localStorage.getItem('ingenieros') || '[]'); } catch { return []; } }
+function saveData(arr) { localStorage.setItem('ingenieros', JSON.stringify(arr)); }
+let engineers = loadData();
+let currentPhotoB64 = ''; let editingId = null;
+let cropper;
+
+document.getElementById('photo-input').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => { 
+    document.getElementById('image-to-crop').src = ev.target.result;
+    document.getElementById('crop-modal').style.display = 'flex';
+    if(cropper) cropper.destroy();
+    cropper = new Cropper(document.getElementById('image-to-crop'), { aspectRatio: 1, viewMode: 1 });
+  };
+  reader.readAsDataURL(file);
+});
+
+function closeCropper() {
+  document.getElementById('crop-modal').style.display = 'none';
+  if(cropper) cropper.destroy();
+  document.getElementById('photo-input').value = '';
+}
+
+function saveCrop() {
+  if(!cropper) return;
+  currentPhotoB64 = cropper.getCroppedCanvas({width: 400, height: 400}).toDataURL('image/jpeg');
+  const img = document.getElementById('photo-preview-img'); 
+  img.src = currentPhotoB64; img.style.display = 'block'; 
+  document.querySelectorAll('.photo-preview .upload-icon, .photo-preview .upload-hint').forEach(el => el.style.display='none');
+  document.getElementById('f-drive').value = ''; // Limpiar campo de drive si subió archivo
+  closeCropper();
+}
+
+document.getElementById('import-input').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const imported = JSON.parse(ev.target.result); if (!Array.isArray(imported)) throw new Error();
+      engineers = imported; saveData(engineers); renderList(); showToast(`✅ ${imported.length} ingenieros importados`);
+    } catch { showToast('❌ Archivo JSON inválido', true); }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+function addEngineer() {
+  const name = document.getElementById('f-name').value.trim(); const year = document.getElementById('f-year').value.trim(); const age = document.getElementById('f-age').value.trim(); const country = document.getElementById('f-country').value; const company = document.getElementById('f-company').value.trim(); const city = document.getElementById('f-city').value.trim(); const role = document.getElementById('f-role').value.trim(); const bio = document.getElementById('f-bio').value.trim();
+  const rawLat = document.getElementById('f-lat').value; const rawLng = document.getElementById('f-lng').value;
+  let lat = rawLat ? parseFloat(rawLat) : null; let lng = rawLng ? parseFloat(rawLng) : null;
+  
+  if (!name || !year || !age || !country || !company) { showToast('⚠ Completá los campos obligatorios (*)', true); return; }
+
+  // Lógica de Foto: Si hay link de drive, usarlo. Si no, usar la de archivo recortado.
+  let finalPhoto = currentPhotoB64;
+  const driveUrl = document.getElementById('f-drive').value.trim();
+  if (driveUrl) {
+    const driveRegex = /\/d\/([a-zA-Z0-9_-]+)/;
+    const match = driveUrl.match(driveRegex);
+    if (match && match[1]) {
+      finalPhoto = `https://drive.google.com/uc?export=view&id=${match[1]}`;
+    } else {
+      finalPhoto = driveUrl; // Fallback por si pega link de imgur u otro
+    }
+  }
+
+  let isActive = true;
+  if (editingId) { const existing = engineers.find(e => e.id === editingId); if (existing && existing.active !== undefined) isActive = existing.active; }
+  const eng = { id: editingId || Date.now(), name, year, age: parseInt(age), country, company, city, role, bio, photo: finalPhoto, lat: lat, lng: lng, active: isActive };
+
+  if (editingId) {
+    const idx = engineers.findIndex(e => e.id === editingId); if (idx !== -1) engineers[idx] = eng;
+    editingId = null; document.getElementById('btn-label').textContent = '＋ Agregar Ingeniero'; showToast('✅ Ingeniero actualizado');
+  } else { engineers.push(eng); showToast(`✅ ${name} agregado al sistema`); }
+  saveData(engineers); renderList(); clearForm();
+}
+
+function clearForm() {
+  ['f-name','f-year','f-age','f-city','f-company','f-role','f-bio','f-drive','f-lat','f-lng'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('f-country').value = ''; currentPhotoB64 = '';
+  const img = document.getElementById('photo-preview-img'); img.src = ''; img.style.display = 'none';
+  document.querySelectorAll('.photo-preview .upload-icon, .photo-preview .upload-hint').forEach(el => el.style.display='');
+  editingId = null; document.getElementById('btn-label').textContent = '＋ Agregar Ingeniero';
+}
+
+function editEngineer(id) {
+  const eng = engineers.find(e => e.id === id); if (!eng) return;
+  editingId = id; document.getElementById('f-name').value = eng.name || ''; document.getElementById('f-year').value = eng.year || ''; document.getElementById('f-age').value = eng.age || ''; document.getElementById('f-country').value = eng.country || ''; document.getElementById('f-city').value = eng.city || ''; document.getElementById('f-company').value = eng.company || ''; document.getElementById('f-role').value = eng.role || ''; document.getElementById('f-bio').value = eng.bio || ''; 
+  document.getElementById('f-lat').value = eng.lat !== null && eng.lat !== undefined ? eng.lat : '';
+  document.getElementById('f-lng').value = eng.lng !== null && eng.lng !== undefined ? eng.lng : '';
+  
+  if (eng.photo && eng.photo.includes('drive.google')) {
+    document.getElementById('f-drive').value = eng.photo; currentPhotoB64 = '';
+    document.getElementById('photo-preview-img').style.display = 'none';
+    document.querySelectorAll('.photo-preview .upload-icon, .photo-preview .upload-hint').forEach(el => el.style.display='');
+  } else {
+    document.getElementById('f-drive').value = ''; currentPhotoB64 = eng.photo || '';
+    const img = document.getElementById('photo-preview-img');
+    if (eng.photo) { img.src = eng.photo; img.style.display = 'block'; document.querySelectorAll('.photo-preview .upload-icon, .photo-preview .upload-hint').forEach(el => el.style.display='none'); } 
+    else { img.src = ''; img.style.display = 'none'; document.querySelectorAll('.photo-preview .upload-icon, .photo-preview .upload-hint').forEach(el => el.style.display=''); }
+  }
+  document.getElementById('btn-label').textContent = '💾 Guardar cambios'; document.querySelector('.form-panel').scrollTo({top:0, behavior:'smooth'});
+}
+
+function deleteEngineer(id) {
+  const eng = engineers.find(e => e.id === id); if (!eng) return;
+  if (!confirm(`¿Eliminar a "${eng.name}"?`)) return;
+  engineers = engineers.filter(e => e.id !== id); saveData(engineers); renderList(); showToast(`🗑 ${eng.name} eliminado`);
+  if (editingId === id) clearForm();
+}
+
+function toggleVisibility(id) {
+  const eng = engineers.find(e => e.id === id);
+  if (eng) { eng.active = eng.active === false ? true : false; saveData(engineers); renderList(); showToast(eng.active ? `👁️ ${eng.name} visible` : `🙈 ${eng.name} oculto`); }
+}
+
+function clearAll() { if (engineers.length === 0) { showToast('Ya no hay ingenieros', true); return; } if (!confirm(`¿Borrar todos?`)) return; engineers = []; saveData(engineers); renderList(); clearForm(); showToast('🗑 Todos eliminados'); }
+function exportData() { if (engineers.length === 0) { showToast('Sin datos', true); return; } const blob = new Blob([JSON.stringify(engineers, null, 2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ingenieros.json'; a.click(); showToast('⬇ Archivo descargado'); }
+
+const FLAGS = { "Argentina":"🇦🇷","Brasil":"🇧🇷","Chile":"🇨🇱","Uruguay":"🇺🇾","Colombia":"🇨🇴","Perú":"🇵🇪","Ecuador":"🇪🇨","Venezuela":"🇻🇪","Bolivia":"🇧🇴","Paraguay":"🇵🇾","México":"🇲🇽","USA":"🇺🇸","Canadá":"🇨🇦","España":"🇪🇸","Francia":"🇫🇷","Alemania":"🇩🇪","Italia":"🇮🇹","UK":"🇬🇧","Países Bajos":"🇳🇱","Suecia":"🇸🇪","Noruega":"🇳🇴","Finlandia":"🇫🇮","Dinamarca":"🇩🇰","Suiza":"🇨🇭","Portugal":"🇵🇹","Polonia":"🇵🇱","Ucrania":"🇺🇦","Rusia":"🇷🇺","Irlanda":"🇮🇪","Australia":"🇦🇺","Nueva Zelanda":"🇳🇿","Japón":"🇯🇵","China":"🇨🇳","India":"🇮🇳","Singapur":"🇸🇬","Corea":"🇰🇷","Emiratos":"🇦🇪","Israel":"🇮🇱","Sudáfrica":"🇿🇦" };
+
+function renderList() {
+  const container = document.getElementById('eng-list');
+  const count = engineers.length; document.getElementById('hdr-count').textContent = count; document.getElementById('list-count').textContent = count + ' en total';
+  if (count === 0) { container.innerHTML = `<div class="empty-state"><div class="icon">🌎</div><h3>Sin ingenieros todavía</h3></div>`; return; }
+
+  container.innerHTML = engineers.map(eng => {
+    const flag = FLAGS[eng.country] || '🌍';
+    const photoHtml = eng.photo ? `<img src="${eng.photo}" alt="${eng.name}">` : `<span>${eng.name.charAt(0).toUpperCase()}</span>`;
+    const city = eng.city ? ` · ${eng.city}` : '';
+    const role = eng.role ? `<span class="tag">${eng.role}</span>` : '';
+    const isActive = eng.active !== false; 
+    const cardClass = isActive ? "eng-card" : "eng-card inactive";
+    const toggleIcon = isActive ? "👁️" : "🙈";
+    const badgeInactive = isActive ? "" : `<span class="tag danger" style="margin-left:8px;">Oculto</span>`;
+
+    return `
+    <div class="${cardClass}">
+      <div class="eng-card-photo">${photoHtml}</div>
+      <div class="eng-card-info">
+        <div class="eng-card-name">${eng.name} ${badgeInactive}</div>
+        <div class="eng-card-meta">${flag} ${eng.country}${city} · Egresado ${eng.year}</div>
+        <div class="eng-card-tags"><span class="tag">${eng.company}</span>${role}</div>
+      </div>
+      <div class="eng-card-actions">
+        <button class="btn-icon toggle" onclick="toggleVisibility(${eng.id})">${toggleIcon}</button>
+        <button class="btn-icon edit" onclick="editEngineer(${eng.id})">✏️</button>
+        <button class="btn-icon delete" onclick="deleteEngineer(${eng.id})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let toastTimer = null;
+function showToast(msg, isError = false) { const t = document.getElementById('toast'); t.textContent = msg; t.style.color = isError ? 'var(--red)' : 'var(--green)'; t.style.borderColor = isError ? 'rgba(248,113,113,0.3)' : 'rgba(74,222,128,0.3)'; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3000); }
+
+renderList();
+</script>
+</body>
+</html>
