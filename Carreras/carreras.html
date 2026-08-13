@@ -303,6 +303,15 @@
             pointer-events: all !important;
         }
 
+        /* [ 0 ]: Mostrar las 4 gráficas al mismo tiempo, en su posición normal de grilla */
+        body.show-all-cards .card {
+            opacity: 1 !important;
+            transform: translate(0,0) scale(1) !important;
+            z-index: 1 !important;
+            border-color: var(--line-color) !important;
+            box-shadow: none !important;
+        }
+
     </style>
 </head>
 <body>
@@ -332,13 +341,14 @@
                 document.body.classList.toggle('is-paused', isPaused);
             }
 
-            // [ 1, 2, 3, 4, 5 ]: Entrar en Modo Manual y destacar elemento
-            if (['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad4', 'Numpad5'].includes(e.code)) {
+            // [ 0, 1, 2, 3, 4, 5 ]: Entrar en Modo Manual y destacar elemento
+            if (['Digit0', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Numpad0', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad4', 'Numpad5'].includes(e.code)) {
                 isManualMode = true;
                 document.body.classList.add('manual-mode');
                 // Limpiamos selecciones anteriores
-                document.body.classList.remove('show-card-1', 'show-card-2', 'show-card-3', 'show-card-4', 'show-plan');
+                document.body.classList.remove('show-card-1', 'show-card-2', 'show-card-3', 'show-card-4', 'show-plan', 'show-all-cards');
                 
+                if (e.code.includes('0')) document.body.classList.add('show-all-cards');
                 if (e.code.includes('1')) document.body.classList.add('show-card-1');
                 if (e.code.includes('2')) document.body.classList.add('show-card-2');
                 if (e.code.includes('3')) document.body.classList.add('show-card-3');
@@ -354,7 +364,7 @@
             // [ R ] o [ ESC ]: Volver a modo Automático
             if (e.code === 'KeyR' || e.code === 'Escape') {
                 isManualMode = false;
-                document.body.classList.remove('manual-mode', 'show-card-1', 'show-card-2', 'show-card-3', 'show-card-4', 'show-plan');
+                document.body.classList.remove('manual-mode', 'show-card-1', 'show-card-2', 'show-card-3', 'show-card-4', 'show-plan', 'show-all-cards');
                 // Reinicia el scroll para que la animación automática tome el control bien
                 scrollOffset = 0;
                 document.documentElement.style.setProperty('--manual-scroll', '0px');
@@ -407,7 +417,7 @@
         <div class="watermark">ANIMACIÓN POR: ULISES RODRIGUEZ</div>
 
         <div class="controls-hint">
-            ⌨️ <b>ESPACIO</b>: Pausar | <b>1-4</b>: Mostrar Carreras | <b>5</b>: Plan de Estudios | <b>R</b>: Volver a Automático | <b>⇅</b>: Scroll
+            ⌨️ <b>ESPACIO</b>: Pausar | <b>1-4</b>: Mostrar Carreras | <b>0</b>: Ver las 4 juntas | <b>5</b>: Plan de Estudios | <b>R</b>: Volver a Automático | <b>⇅</b>: Scroll
         </div>
 
         <div class="dashboard">
